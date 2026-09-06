@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.codemonkey76.myair",
+  "name": "MyAir",
+  "version": "1.0.0",
+  "author": "Shane Poppleton",
+  "description": "MyAir aircon status, per-room temperatures, and controls",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "MyAir",
+    "description": "MyAir aircon status, per-room temperatures, and controls",
+    "category": "Home",
+    "allowMultiple": false
+  }
+}
