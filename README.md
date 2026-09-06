@@ -47,6 +47,20 @@ git clone https://github.com/codemonkey76/omarchy-myair \
 Then add it to a bar section in `~/.config/omarchy/shell.json` (see below) and
 run `omarchy restart shell`.
 
+## Removal
+
+```bash
+omarchy plugin remove io.github.codemonkey76.myair
+```
+
+That unregisters the plugin and deletes its directory. If you installed by
+hand, remove the entry from `bar.layout` in `~/.config/omarchy/shell.json`,
+delete `~/.config/omarchy/plugins/io.github.codemonkey76.myair`, then run
+`omarchy restart shell`.
+
+The plugin writes nothing outside its own directory, and stores no state: its
+only configuration is the entry you add to `shell.json`.
+
 ## Configuration — pointing it at your unit
 
 **This is the one thing you must set.** The widget does not guess or scan; it
