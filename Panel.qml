@@ -88,9 +88,17 @@ Panel {
     : "MyAir — set \"host\" in shell.json"
 
   // ---- Reading ------------------------------------------------------------
+  // --max-time bounds how long a hostile endpoint can hold the socket;
+  // --max-filesize bounds how much it can push through it. Without the second,
+  // a five-second window is enough to stream hundreds of megabytes into the
+  // shell process, since the response is chunked and never declares a length.
+  // curl aborts the transfer at the ceiling and exits 63; Model.parseGuarded
+  // re-checks the size in case curl is old enough to only test Content-Length.
   function refresh() {
     if (!configured || getProc.running) return
-    getProc.command = ["curl", "-fsS", "--max-time", "5", root.baseUrl + "/getSystemData"]
+    getProc.command = ["curl", "-fsS", "--max-time", "5",
+                       "--max-filesize", String(Model.MAX_DOC_BYTES),
+                       root.baseUrl + "/getSystemData"]
     getProc.running = true
   }
 
@@ -107,6 +115,7 @@ Panel {
         root.ac = parsed
         root.reachable = true
         root.everLoaded = true
+        root.oversized = false
 
         // Only drop the optimistic overlay once nothing is in flight. A
         // reading that left the tablet before our command landed would
@@ -119,6 +128,9 @@ Panel {
     }
     onExited: function(exitCode) {
       if (exitCode !== 0) root.reachable = false
+      // 63 is curl's --max-filesize abort. The endpoint answered, just with
+      // more than any MyAir document — worth saying, rather than "down".
+      if (exitCode === 63) root.oversized = true
     }
   }
 
@@ -139,6 +151,11 @@ Panel {
   property bool sending: false
   property string lastError: ""
 
+  // Set when curl aborted a response for exceeding the byte ceiling. Kept
+  // apart from lastError, which reports a command the tablet rejected, so that
+  // the next good reading clears it on its own.
+  property bool oversized: false
+
   function enqueue(payload) {
     var q = queue.slice()
     q.push(JSON.stringify(payload))
@@ -151,7 +168,8 @@ Panel {
     var next = queue[0]
     queue = queue.slice(1)
     sending = true
-    setProc.command = ["curl", "-fsS", "--max-time", "6", "-G",
+    setProc.command = ["curl", "-fsS", "--max-time", "6",
+                       "--max-filesize", String(Model.MAX_ACK_BYTES), "-G",
                        root.baseUrl + "/setAircon", "--data-urlencode", "json=" + next]
     setProc.running = true
   }
@@ -163,12 +181,7 @@ Panel {
       onStreamFinished: {
         // ack:false means the tablet understood the JSON but rejected a value.
         // Surface it instead of leaving a control silently stuck optimistic.
-        try {
-          var res = JSON.parse(String(text || "").trim())
-          root.lastError = (res && res.ack === false) ? String(res.reason || "Rejected") : ""
-        } catch (e) {
-          root.lastError = ""
-        }
+        root.lastError = Model.parseAck(text)
       }
     }
     onExited: function(exitCode) {
@@ -397,6 +410,9 @@ Panel {
             spacing: Style.space(2)
 
             Text {
+              // Without this the default AutoText would sniff the unit's name
+              // for markup and interpret it as rich text.
+              textFormat: Text.PlainText
               text: root.acName
               color: root.fg
               font.family: root.fontFamily
@@ -409,9 +425,10 @@ Panel {
             Text {
               textFormat: Text.PlainText
               text: (!root.configured ? "Not configured"
+                    : root.oversized ? "Oversized response"
                     : root.lastError !== "" ? root.lastError
                     : Model.statusLine(root.reachable, root.isOn, root.mode, root.fan)).toUpperCase()
-              color: root.lastError !== "" ? Color.urgent : Qt.darker(root.fg, 1.4)
+              color: (root.oversized || root.lastError !== "") ? Color.urgent : Qt.darker(root.fg, 1.4)
               font.family: root.fontFamily
               font.pixelSize: Style.font.caption
               font.bold: true
