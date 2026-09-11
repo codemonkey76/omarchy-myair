@@ -47,20 +47,6 @@ git clone https://github.com/codemonkey76/omarchy-myair \
 Then add it to a bar section in `~/.config/omarchy/shell.json` (see below) and
 run `omarchy restart shell`.
 
-## Removal
-
-```bash
-omarchy plugin remove io.github.codemonkey76.myair
-```
-
-That unregisters the plugin and deletes its directory. If you installed by
-hand, remove the entry from `bar.layout` in `~/.config/omarchy/shell.json`,
-delete `~/.config/omarchy/plugins/io.github.codemonkey76.myair`, then run
-`omarchy restart shell`.
-
-The plugin writes nothing outside its own directory, and stores no state: its
-only configuration is the entry you add to `shell.json`.
-
 ## Configuration — pointing it at your unit
 
 **This is the one thing you must set.** The widget does not guess or scan; it
@@ -136,7 +122,7 @@ Setpoint steps are 0.5°, clamped to 16–32°.
 It can also be driven over IPC:
 
 ```bash
-omarchy-shell io.github.codemonkey76.myair open
+omarchy-shell io.github.codemonkey76.myair toggle   # open/close the panel; also: open, close
 omarchy-shell io.github.codemonkey76.myair power
 omarchy-shell io.github.codemonkey76.myair refresh
 ```
@@ -181,6 +167,20 @@ applying, which rules out plausible guesses:
 
 `setTemp` is **not** validated: the tablet acks any number, including 35 or
 negative values, so this widget clamps to 16–32° client-side.
+
+## Removal
+
+```bash
+omarchy plugin remove io.github.codemonkey76.myair
+```
+
+That unregisters the plugin and deletes its directory. If you installed by
+hand, remove the entry from `bar.layout` in `~/.config/omarchy/shell.json`,
+delete `~/.config/omarchy/plugins/io.github.codemonkey76.myair`, then run
+`omarchy restart shell`.
+
+The plugin writes nothing outside its own directory, and stores no state: its
+only configuration is the entry you add to `shell.json`.
 
 ## License
 
